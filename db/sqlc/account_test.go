@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -15,7 +16,7 @@ func createRandomAccount(t *testing.T) Account {
 		UserID:      category.UserID,
 		CategoryID:  category.ID,
 		Title:       util.RandomString(12),
-		Type:        category.Title,
+		Type:        category.Type,
 		Description: util.RandomString(20),
 		Value:       10,
 		Date:        time.Now(),
@@ -61,21 +62,21 @@ func TestGetAccount(t *testing.T) {
 
 func TestDeleteAccount(t *testing.T) {
 	account := createRandomAccount(t)
-	err := testQueries.DeleteAccout(context.Background(), account.ID)
+	err := testQueries.DeleteAccount(context.Background(), account.ID)
 	require.NoError(t, err)
 }
 
 func TestUpdateAccount(t *testing.T) {
 	account1 := createRandomAccount(t)
 
-	arg := UpdateAccontParams{
+	arg := UpdateAccountParams{
 		ID:          account1.ID,
 		Title:       util.RandomString(12),
 		Description: util.RandomString(20),
 		Value:       15,
 	}
 
-	account2, err := testQueries.UpdateAccont(context.Background(), arg)
+	account2, err := testQueries.UpdateAccount(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, account2)
 
@@ -90,10 +91,16 @@ func TestListAccounts(t *testing.T) {
 	lastAccount := createRandomAccount(t)
 
 	arg := GetAccountsParams{
-		UserID:      lastAccount.UserID,
-		Type:        lastAccount.Type,
-		CategoryID:  lastAccount.CategoryID,
-		Date:        lastAccount.Date,
+		UserID: lastAccount.UserID,
+		Type:   lastAccount.Type,
+		CategoryID: sql.NullInt32{
+			Valid: true,
+			Int32: lastAccount.CategoryID,
+		},
+		Date: sql.NullTime{
+			Valid: true,
+			Time:  lastAccount.Date,
+		},
 		Title:       lastAccount.Title,
 		Description: lastAccount.Description,
 	}
@@ -116,12 +123,12 @@ func TestListAccounts(t *testing.T) {
 func TestListGetReports(t *testing.T) {
 	lastAccount := createRandomAccount(t)
 
-	arg := GetAccontReportsParams{
+	arg := GetAccountsReportsParams{
 		UserID: lastAccount.UserID,
 		Type:   lastAccount.Type,
 	}
 
-	sumValue, err := testQueries.GetAccontReports(context.Background(), arg)
+	sumValue, err := testQueries.GetAccountsReports(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, sumValue)
 }
@@ -129,12 +136,12 @@ func TestListGetReports(t *testing.T) {
 func TestListGetGraph(t *testing.T) {
 	lastAccount := createRandomAccount(t)
 
-	arg := GetAccontGraphParams{
+	arg := GetAccountsGraphParams{
 		UserID: lastAccount.UserID,
 		Type:   lastAccount.Type,
 	}
 
-	graphValue, err := testQueries.GetAccontGraph(context.Background(), arg)
+	graphValue, err := testQueries.GetAccountsGraph(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, graphValue)
 }
