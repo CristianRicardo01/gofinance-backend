@@ -5,6 +5,10 @@ go 1.18
 require (
 	github.com/lib/pq v1.10.7
 	github.com/stretchr/testify v1.8.1
+	github.com/gin-gonic/gin v1.7.7
+	github.com/golang-jwt/jwt/v4 v4.4.2
+	github.com/joho/godotenv v1.4.0
+	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898
 )
 
 require (
