@@ -6,6 +6,7 @@ import (
 
 	"github.com/GustavoNoronha0/gofinance-backend/util"
 	"github.com/stretchr/testify/require"
+	
 )
 
 func createRandomUser(t *testing.T) User {
