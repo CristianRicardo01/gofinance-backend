@@ -10,14 +10,13 @@ import (
 )
 
 const createCategory = `-- name: CreateCategory :one
-INSERT INTO
-    categories(
-        user_id,
-        title,
-        type,
-        description
+INSERT INTO categories (
+  user_id,
+  title,
+  type,
+  description
 ) VALUES (
-    $1, $2, $3, $4
+  $1, $2, $3, $4
 ) RETURNING id, user_id, title, type, description, created_at
 `
 
@@ -47,20 +46,26 @@ func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) 
 	return i, err
 }
 
-const deleteCategory = `-- name: DeleteCategory :exec
+const deleteCategories = `-- name: DeleteCategories :exec
 DELETE FROM categories
 WHERE id = $1
 `
 
-func (q *Queries) DeleteCategory(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCategory, id)
+func (q *Queries) DeleteCategories(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteCategories, id)
 	return err
 }
 
 const getCategories = `-- name: GetCategories :many
 SELECT id, user_id, title, type, description, created_at FROM categories
-WHERE user_id = $1 AND type = $2
-AND title LIKE $3 AND description LIKE $4
+WHERE
+  user_id = $1
+AND
+  type = $2
+AND
+  LOWER(title) LIKE CONCAT('%', LOWER($3::text), '%')
+AND
+  LOWER(description) LIKE CONCAT('%', LOWER($4::text), '%')
 `
 
 type GetCategoriesParams struct {
@@ -124,21 +129,21 @@ func (q *Queries) GetCategory(ctx context.Context, id int32) (Category, error) {
 	return i, err
 }
 
-const updateCategory = `-- name: UpdateCategory :one
+const updateCategories = `-- name: UpdateCategories :one
 UPDATE categories
 SET title = $2, description = $3
-WHERE id = $1 
+WHERE id = $1
 RETURNING id, user_id, title, type, description, created_at
 `
 
-type UpdateCategoryParams struct {
+type UpdateCategoriesParams struct {
 	ID          int32  `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
-func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error) {
-	row := q.db.QueryRowContext(ctx, updateCategory, arg.ID, arg.Title, arg.Description)
+func (q *Queries) UpdateCategories(ctx context.Context, arg UpdateCategoriesParams) (Category, error) {
+	row := q.db.QueryRowContext(ctx, updateCategories, arg.ID, arg.Title, arg.Description)
 	var i Category
 	err := row.Scan(
 		&i.ID,
