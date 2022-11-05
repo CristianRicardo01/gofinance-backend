@@ -13,15 +13,15 @@ import (
 
 const createAccount = `-- name: CreateAccount :one
 INSERT INTO accounts (
-    user_id,
-    category_id,
-    title,
-    type,
-    description,
-    value,
-    date
+  user_id,
+  category_id,
+  title,
+  type,
+  description,
+  value,
+  date
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+  $1, $2, $3, $4, $5, $6, $7
 ) RETURNING id, user_id, category_id, title, type, description, value, date, created_at
 `
 
@@ -60,48 +60,14 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 	return i, err
 }
 
-const deleteCAccout = `-- name: DeleteCAccout :exec
+const deleteAccount = `-- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1
 `
 
-func (q *Queries) DeleteAccout(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCAccout, id)
+func (q *Queries) DeleteAccount(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteAccount, id)
 	return err
-}
-
-const getAccontGraph = `-- name: GetAccontGraph :one
-SELECT COUNT (*) FROM accounts
-WHERE user_id = $1 AND type = $2
-`
-
-type GetAccontGraphParams struct {
-	UserID int32  `json:"user_id"`
-	Type   string `json:"type"`
-}
-
-func (q *Queries) GetAccontGraph(ctx context.Context, arg GetAccontGraphParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getAccontGraph, arg.UserID, arg.Type)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const getAccontReports = `-- name: GetAccontReports :one
-SELECT SUM (value) AS sum_value FROM accounts
-WHERE user_id = $1 AND type = $2
-`
-
-type GetAccontReportsParams struct {
-	UserID int32  `json:"user_id"`
-	Type   string `json:"type"`
-}
-
-func (q *Queries) GetAccontReports(ctx context.Context, arg GetAccontReportsParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getAccontReports, arg.UserID, arg.Type)
-	var sum_value int64
-	err := row.Scan(&sum_value)
-	return sum_value, err
 }
 
 const getAccount = `-- name: GetAccount :one
@@ -127,30 +93,41 @@ func (q *Queries) GetAccount(ctx context.Context, id int32) (Account, error) {
 }
 
 const getAccounts = `-- name: GetAccounts :many
-SELECT 
-    a.id,
-    a.user_id,
-    a.title,
-    a.type,
-    a.description,
-    a.value,
-    a.date,
-    a.created_at,
-    c.title as category_title
-FROM accounts a
-LEFT JOIN categories c ON c.id = a.category_id
-WHERE a.user_id = $1 AND a.type = $2
-AND a.category_id = $3 AND a.title LIKE $4
-AND a.description LIKE $5 AND a.date = $6
+SELECT
+  a.id,
+  a.user_id,
+  a.title,
+  a.type,
+  a.description,
+  a.value,
+  a.date,
+  a.created_at,
+  c.title as category_title
+FROM
+  accounts a
+LEFT JOIN
+  categories c ON c.id = a.category_id
+WHERE
+  a.user_id = $1
+AND
+  a.type = $2
+AND
+  LOWER(a.title) LIKE CONCAT('%', LOWER($3::text), '%')
+AND
+  LOWER(a.description) LIKE CONCAT('%', LOWER($4::text), '%')
+AND
+  a.category_id = COALESCE($5, a.category_id)
+AND
+  a.date = COALESCE($6, a.date)
 `
 
 type GetAccountsParams struct {
-	UserID      int32     `json:"user_id"`
-	Type        string    `json:"type"`
-	CategoryID  int32     `json:"category_id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Date        time.Time `json:"date"`
+	UserID      int32         `json:"user_id"`
+	Type        string        `json:"type"`
+	Title       string        `json:"title"`
+	Description string        `json:"description"`
+	CategoryID  sql.NullInt32 `json:"category_id"`
+	Date        sql.NullTime  `json:"date"`
 }
 
 type GetAccountsRow struct {
@@ -169,9 +146,9 @@ func (q *Queries) GetAccounts(ctx context.Context, arg GetAccountsParams) ([]Get
 	rows, err := q.db.QueryContext(ctx, getAccounts,
 		arg.UserID,
 		arg.Type,
-		arg.CategoryID,
 		arg.Title,
 		arg.Description,
+		arg.CategoryID,
 		arg.Date,
 	)
 	if err != nil {
@@ -205,22 +182,56 @@ func (q *Queries) GetAccounts(ctx context.Context, arg GetAccountsParams) ([]Get
 	return items, nil
 }
 
-const updateAccont = `-- name: UpdateAccont :one
+const getAccountsGraph = `-- name: GetAccountsGraph :one
+SELECT COUNT(*) FROM accounts
+where user_id = $1 and type = $2
+`
+
+type GetAccountsGraphParams struct {
+	UserID int32  `json:"user_id"`
+	Type   string `json:"type"`
+}
+
+func (q *Queries) GetAccountsGraph(ctx context.Context, arg GetAccountsGraphParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getAccountsGraph, arg.UserID, arg.Type)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getAccountsReports = `-- name: GetAccountsReports :one
+SELECT SUM(value) AS sum_value FROM accounts
+where user_id = $1 and type = $2
+`
+
+type GetAccountsReportsParams struct {
+	UserID int32  `json:"user_id"`
+	Type   string `json:"type"`
+}
+
+func (q *Queries) GetAccountsReports(ctx context.Context, arg GetAccountsReportsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getAccountsReports, arg.UserID, arg.Type)
+	var sum_value int64
+	err := row.Scan(&sum_value)
+	return sum_value, err
+}
+
+const updateAccount = `-- name: UpdateAccount :one
 UPDATE accounts
 SET title = $2, description = $3, value = $4
-WHERE id = $1 
+WHERE id = $1
 RETURNING id, user_id, category_id, title, type, description, value, date, created_at
 `
 
-type UpdateAccontParams struct {
+type UpdateAccountParams struct {
 	ID          int32  `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Value       int32  `json:"value"`
 }
 
-func (q *Queries) UpdateAccont(ctx context.Context, arg UpdateAccontParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, updateAccont,
+func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, updateAccount,
 		arg.ID,
 		arg.Title,
 		arg.Description,
