@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 )
+
 const alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 func init() {
@@ -14,15 +15,16 @@ func init() {
 
 func RandomString(number int) string {
 	var sb strings.Builder
-	K := len(alphabet)
+	k := len(alphabet)
+
 	for i := 0; i < number; i++ {
-		c := alphabet[rand.Intn(K)]
+		c := alphabet[rand.Intn(k)]
 		sb.WriteByte(c)
 	}
 
 	return sb.String()
 }
 
-func RandomEmail(number int ) string {
+func RandomEmail(number int) string {
 	return fmt.Sprintf("%s@email.com", RandomString(number))
 }
