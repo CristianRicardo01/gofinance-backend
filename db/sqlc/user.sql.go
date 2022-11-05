@@ -11,11 +11,11 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-    username, 
-    password, 
-    email
+  username,
+  password,
+  email
 ) VALUES (
-    $1, $2, $3
+  $1, $2, $3
 ) RETURNING id, username, password, email, created_at
 `
 
