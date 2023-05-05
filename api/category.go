@@ -10,10 +10,10 @@ import (
 )
 
 type createCategoryRequest struct {
-	UserID      int32  `json:"user_id" binding:"required"`
-	Title       string `json:"title" binding:"required"`
-	Type        string `json:"type" binding:"required"`
-	Description string `json:"description" binding:"required"`
+	UserID      int32  `form:"user_id"     	json:"user_id"     	binding:"required"`
+	Title       string `form:"title"       	json:"title"      	binding:"required"`
+	Type        string `form:"type"        	json:"type"       	binding:"required"`
+	Description string `form:"description" 	json:"description" 	binding:"required"`
 }
 
 func (server *Server) createCategory(ctx *gin.Context) {
@@ -22,7 +22,7 @@ func (server *Server) createCategory(ctx *gin.Context) {
 		return
 	}
 	var req createCategoryRequest
-	err := ctx.ShouldBindJSON(&req)
+	err := ctx.ShouldBindQuery(&req)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 	}
@@ -126,10 +126,10 @@ func (server *Server) updateCategory(ctx *gin.Context) {
 }
 
 type getCategoriesRequest struct {
-	UserID      int32  `json:"user_id" binding:"required"`
-	Type        string `json:"type" binding:"required"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	UserID      int32  `form:"user_id" json:"user_id" binding:"required"`
+	Type        string `form:"type" json:"type" binding:"required"`
+	Title       string `form:"title" json:"title"`
+	Description string `form:"description" json:"description"`
 }
 
 func (server *Server) getCategories(ctx *gin.Context) {
@@ -138,7 +138,7 @@ func (server *Server) getCategories(ctx *gin.Context) {
 		return
 	}
 	var req getCategoriesRequest
-	err := ctx.ShouldBindJSON(&req)
+	err := ctx.ShouldBindQuery(&req)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
